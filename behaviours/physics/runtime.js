@@ -573,7 +573,7 @@ cr.behaviors.Rigidbody = function(runtime)
 		behaviorMain.world.Step(0.01,1);
 		
 		var instances = behavior.my_instances.items;
-		for(reference in instances)
+		for(var reference in instances)
 		{
 			var instance = instances[reference];
 
