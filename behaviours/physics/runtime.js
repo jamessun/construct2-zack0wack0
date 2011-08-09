@@ -490,6 +490,16 @@ assert2(cr.behaviors,"cr.behaviors not created");
 cr.behaviors.Rigidbody = function(runtime)
 {
 	this.runtime = runtime;
+	
+	runtime.addDestroyCallback
+	(
+		function(instance)
+		{
+			var body = instance.body;
+			if(typeof(body) != "undefined")
+				body.physicsDestroyBody();
+		}
+	);
 };
 
 (function ()
@@ -556,9 +566,11 @@ cr.behaviors.Rigidbody = function(runtime)
 		var body = cr.behaviors.Rigidbody.world.CreateBody(boxBd);
 		this.body = body;
 		this.inst.body = body;
+		
+		instance.add_bbox_changed_callback(this.physicsUpdateBody);
 	};
 	cr.behaviors.Rigidbody.worldStepping = 0; //hack to make the world only tick once per tick (is there a way to have a perbehaviour tick instead of instances?)
-	behinstProto.stepWorld = function()
+	behinstProto.physicsStepWorld = function()
 	{
 		var behaviorMain = cr.behaviors.Rigidbody;
 		var behavior = this.behavior;
@@ -570,30 +582,64 @@ cr.behaviors.Rigidbody = function(runtime)
 		behaviorMain.worldStepping = 0;
 		
 		var dt = this.runtime.getDt(this.inst);
-		behaviorMain.world.Step(0.01,1);
+		behaviorMain.world.Step(dt,1);
 		
 		var instances = behavior.my_instances.items;
 		for(var reference in instances)
 		{
 			var instance = instances[reference];
-
-			var pos = instance.body.m_position0;
+			var body = instance.body;
+			if(typeof(body) == "undefined")
+				continue;
+			
+			var pos = body.GetCenterPosition();
 			var x = pos.x;
 			var y = pos.y;
-			var radians = instance.body.m_rotation0;
+			var radians = body.GetRotation();
 			
 			instance.x = x;
 			instance.y = y;
-			instance.angle = radians;	
+			instance.angle = radians;
+			instance.physicsUpdated = true;
 			instance.set_bbox_changed();
 		}
 		
 		behaviorMain.worldStepping = 0;
 	};
-	behinstProto.tick = function ()
+	behinstProto.tick = function()
 	{
 		cr.behaviors.Rigidbody.worldStepping++;
-		this.stepWorld();
+		this.physicsStepWorld();
+	};
+	behinstProto.physicsDestroyBody = function()
+	{
+		var instance = this.instance;
+		var body = instance.body;
+		if(typeof(body) == "undefined")
+			return;
+		
+		cr.behaviors.Rigidbody.world.DestroyBody(body);
+	};
+	behinstProto.physicsUpdateBody = function(instance)
+	{
+		if(instance.physicsUpdated)
+		{
+			instance.physicsUpdated = false;
+			return;
+		}
+		
+		var x = instance.x;
+		var y = instance.y;
+		var angle = instance.angle;
+		
+		var body = instance.body;
+		if(typeof(body) == "undefined")
+			return;
+		
+		var pos = body.m_position;
+		pos.x = x;
+		pos.y = y;
+		cr.behaviors.Rigidbody.world.Step(0.0001,1);
 	};
 
 	behaviorProto.cnds = {};

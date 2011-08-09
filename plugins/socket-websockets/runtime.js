@@ -33,7 +33,7 @@ cr.plugins.Socket = function(runtime)
 		if(typeof(WebSocket) == "undefined")
 			return alert("Your browser doesn't support WebSocket. You can't run this game, sorry.");
 		
-		this.lastData = "";
+		this.dataStack = [];
 		this.lastAddress = "";
 		this.lastPort = 80;
 	};
@@ -78,7 +78,7 @@ cr.plugins.Socket = function(runtime)
 			"message",
 			function(event)
 			{
-				instance.lastData = event.data;
+				instance.dataStack.push(event.data);
 				runtime.trigger("OnData",instance);
 			}
 		);
@@ -156,7 +156,14 @@ cr.plugins.Socket = function(runtime)
 
 	exps["LastData"] = function(result)
 	{
-		result.set_string(this.lastData);
+		var dataStack = this.dataStack;
+		var dataLength = dataStack.length;
+		
+		var data = "";
+		if(dataLength > 0)
+			data = dataStack.splice(0,1)[0].toString();
+		
+		result.set_string(data);
 	};
 	exps["LastPort"] = function(result)
 	{
