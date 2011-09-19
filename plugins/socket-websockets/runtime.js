@@ -76,8 +76,8 @@ cr.plugins_.Socket = function(runtime)
 		else
 			socket = new MozWebSocket(uri);
 		
-		var instance = this.inst;
-		var runtime = this.runtime;
+		var instance = this;
+		var runtime = instance.runtime;
 		socket.onmessage = function(event)
 		{
 			instance.dataStack.push(event.data);

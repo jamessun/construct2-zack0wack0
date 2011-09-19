@@ -28,6 +28,9 @@ cr.plugins_.Function = function(runtime)
 	{
 		this.type = type;
 		this.runtime = type.runtime;
+		this.currentFunction = "";
+		this.currentArguments = [];
+		this.builtArguments = [];
 	};
 	
 	var instanceProto = pluginProto.Instance.prototype;
@@ -39,18 +42,41 @@ cr.plugins_.Function = function(runtime)
 	pluginProto.cnds = {};
 	var cnds = pluginProto.cnds;
 
-	cnds["OnFunction"] = function()
+	cnds["OnFunction"] = function(name)
 	{
-		return true;
+		return name.toLowerCase() == this.currentFunction.toLowerCase();
 	};
 
 	pluginProto.acts = {};
 	var acts = pluginProto.acts;
+	
 	acts["CallFunction"] = function(name)
 	{
+		this.currentFunction = name;
+		this.currentArguments = this.builtArguments;
+		this.builtArguments = [];
 		
+		this.runtime.trigger(pluginProto.cnds.OnFunction,this);
 	};
+	acts["AddParameter"] = function(value)
+	{
+		this.builtArguments.push(value);
+	};
+	
 	pluginProto.exps = {};
 	var exps = pluginProto.exps;
-	
+	exps["GetParameterCount"] = function(ret)
+	{
+		ret.set_int(this.currentArguments.length);
+	};
+	exps["GetParameter"] = function(ret,index)
+	{
+		var value = this.currentArguments[index];
+		
+		if(typeof(value) == "undefined")
+			return ret.set_string("");
+		
+		ret.set_any(value);
+	};
 }());
+	

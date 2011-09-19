@@ -4145,13 +4145,13 @@ return false;
 };
 ;
 ;
-cr.plugins_.Browser = function(runtime)
+cr.plugins_.Function = function(runtime)
 {
 this.runtime = runtime;
 };
-(function ()
+(function()
 {
-var pluginProto = cr.plugins_.Browser.prototype;
+var pluginProto = cr.plugins_.Function.prototype;
 pluginProto.Type = function(plugin)
 {
 this.plugin = plugin;
@@ -4165,6 +4165,9 @@ pluginProto.Instance = function(type)
 {
 this.type = type;
 this.runtime = type.runtime;
+this.currentFunction = "";
+this.currentArguments = [];
+this.builtArguments = [];
 };
 var instanceProto = pluginProto.Instance.prototype;
 instanceProto.onCreate = function()
@@ -4172,133 +4175,58 @@ instanceProto.onCreate = function()
 };
 pluginProto.cnds = {};
 var cnds = pluginProto.cnds;
-cnds.CookiesEnabled = function()
+cnds["OnFunction"] = function(name)
 {
-return navigator.cookieEnabled;
-};
-cnds.IsOnline = function()
-{
-return navigator.onLine;
-};
-cnds.HasJava = function()
-{
-return navigator.javaEnabled();
+return name.toLowerCase() == this.currentFunction.toLowerCase();
 };
 pluginProto.acts = {};
 var acts = pluginProto.acts;
-acts.Alert = function (msg)
+acts["CallFunction"] = function(name)
 {
-alert(msg.toString());
+this.currentFunction = name;
+this.currentArguments = this.builtArguments;
+this.builtArguments = [];
+this.runtime.trigger(pluginProto.cnds.OnFunction,this);
 };
-acts.Close = function ()
+acts["AddParameter"] = function(value)
 {
-window.close();
-};
-acts.Focus = function ()
-{
-window.focus();
-};
-acts.Blur = function ()
-{
-window.blur();
-};
-acts.GoBack = function ()
-{
-window.back();
-};
-acts.GoForward = function ()
-{
-window.forward();
-};
-acts.GoHome = function ()
-{
-window.home();
-};
-acts.GoToURL = function (url)
-{
-window.location = url;
-};
-acts.GoToURLWindow = function (url, tag)
-{
-window.open(url, tag);
+this.builtArguments.push(value);
 };
 pluginProto.exps = {};
 var exps = pluginProto.exps;
-exps.URL = function (ret)
+exps["GetParameterCount"] = function(ret)
 {
-ret.set_string(window.location.toString());
+ret.set_int(this.currentArguments.length);
 };
-exps.Protocol = function (ret)
+exps["GetParameter"] = function(ret,index)
 {
-ret.set_string(window.location.protocol);
-};
-exps.Domain = function (ret)
-{
-ret.set_string(window.location.hostname);
-};
-exps.PathName = function (ret)
-{
-ret.set_string(window.location.pathname);
-};
-exps.Hash = function (ret)
-{
-ret.set_string(window.location.hash);
-};
-exps.Referrer = function (ret)
-{
-ret.set_string(document.referrer);
-};
-exps.Title = function (ret)
-{
-ret.set_string(document.title);
-};
-exps.Name = function (ret)
-{
-ret.set_string(navigator.appName);
-};
-exps.Version = function (ret)
-{
-ret.set_string(navigator.appVersion);
-};
-exps.Language = function (ret)
-{
-if (navigator.language)
-ret.set_string(navigator.language);
-else
-ret.set_string("");
-};
-exps.Platform = function (ret)
-{
-ret.set_string(navigator.platform);
-};
-exps.Product = function (ret)
-{
-if (navigator.product)
-ret.set_string(navigator.product);
-else
-ret.set_string("");
-};
-exps.Vendor = function (ret)
-{
-if (navigator.vendor)
-ret.set_string(navigator.vendor);
-else
-ret.set_string("");
-};
-exps.UserAgent = function (ret)
-{
-ret.set_string(navigator.userAgent);
+var value = this.currentArguments[index];
+if(typeof(value) == "undefined")
+return ret.set_string("");
+ret.set_any(value);
 };
 }());
 ;
 ;
-cr.plugins_.Socket = function(runtime)
+cr.plugins_.Text = function(runtime)
 {
 this.runtime = runtime;
 };
 (function ()
 {
-var pluginProto = cr.plugins_.Socket.prototype;
+var pluginProto = cr.plugins_.Text.prototype;
+pluginProto.onCreate = function ()
+{
+pluginProto.acts.SetWidth = function (w)
+{
+if (this.width !== w)
+{
+this.width = w;
+this.text_changed = true;	// also recalculate text wrapping
+this.set_bbox_changed();
+}
+};
+};
 pluginProto.Type = function(plugin)
 {
 this.plugin = plugin;
@@ -4312,116 +4240,187 @@ pluginProto.Instance = function(type)
 {
 this.type = type;
 this.runtime = type.runtime;
-if(typeof(WebSocket) == "undefined" && typeof(MozWebSocket) == "undefined")
-return alert("Your browser doesn't support WebSockets. You can't run this game, sorry.");
-this.dataStack = [];
-this.lastAddress = "";
-this.lastPort = 80;
+this.lines = [];		// for word wrapping
+this.text_changed = true;
 };
 var instanceProto = pluginProto.Instance.prototype;
 instanceProto.onCreate = function()
 {
-};
-instanceProto.send = function(data)
+this.text = this.properties[0];
+this.visible = (this.properties[1] === 0);	// 0=visible, 1=invisible
+this.font = this.properties[2];
+this.color = this.properties[3];
+this.halign = this.properties[4];			// 0=left, 1=center, 2=right
+var arr = this.font.split(" ");
+var ptSize = 0;
+var i;
+for (i = 0; i < arr.length; i++)
 {
-var socket = this.socket;
-if(typeof(socket) != "undefined")
-socket.send(data);
-};
-instanceProto.disconnect = function()
+if (arr[i].substr(arr[i].length - 2, 2) === "pt")
 {
-var socket = this.socket;
-if(typeof(socket) != "undefined")
-socket.close();
+ptSize = parseInt(arr[i].substr(0, arr[i].length - 2));
+this.pxHeight = Math.ceil((ptSize / 72.0) * 96.0) + 4;	// assume 96dpi...
+break;
+}
+}
+;
 };
-instanceProto.connect = function(host,port)
+instanceProto.draw = function(ctx)
 {
-if(typeof(WebSocket) == "undefined" && typeof(MozWebSocket) == "undefined")
-return;
-var socket = this.socket;
-if(typeof(socket) != "undefined")
-socket.close();
-this.lastAddress = host;
-this.lastPort = port;
-var uri = "ws://" + host + ":" + port;
-if(!!WebSocket)
-socket = new WebSocket(uri);
-else
-socket = new MozWebSocket(uri);
-var instance = this.inst;
-var runtime = this.runtime;
-socket.onmessage = function(event)
+ctx.font = this.font;
+ctx.textBaseline = "top";
+ctx.fillStyle = this.color;
+if (this.opacity !== 1.0)
+ctx.globalAlpha = this.opacity;
+if (this.text_changed)
 {
-instance.dataStack.push(event.data);
-runtime.trigger(pluginProto.cnds.OnData,instance);
+this.lines = this.type.plugin.WordWrap(this.text, ctx, this.width);
+this.text_changed = false;
+}
+var penX = this.x - (this.hotspotX * this.width);
+var penY = this.y - (this.hotspotY * this.height);
+var endY = penY + this.height;
+var line_height = this.pxHeight;
+var drawX;
+var i;
+for (i = 0; i < this.lines.length; i++)
+{
+drawX = penX;
+if (this.halign === 1)		// center
+drawX = penX + (this.width - this.lines[i].width) / 2;
+else if (this.halign === 2)	// right
+drawX = penX + (this.width - this.lines[i].width);
+ctx.fillText(this.lines[i].text, drawX, penY);
+penY += line_height;
+if (penY >= endY - line_height)
+break;
+}
+if (this.opacity !== 1.0)
+ctx.globalAlpha = 1.0;
 };
-socket.onerror = function(event)
+pluginProto.TokeniseWords = function (text)
 {
-runtime.trigger(pluginProto.cnds.OnError,instance);
-};
-socket.onopen = function(event)
+var tokens = [];
+var cur_word = "";
+var ch;
+var i = 0;
+while (i < text.length)
 {
-runtime.trigger(pluginProto.cnds.OnConnect,instance);
-};
-socket.onclose = function(event)
+ch = text.charAt(i);
+if (ch === "\n")
 {
-runtime.trigger(pluginProto.cnds.OnDisconnect,instance);
+if (cur_word.length)
+{
+tokens.push(cur_word);
+cur_word = "";
+}
+tokens.push("\n");
+++i;
+}
+else if (ch === " " || ch === "\t" || ch === "-")
+{
+do {
+cur_word += text.charAt(i);
+i++;
+}
+while (i < text.length && (text.charAt(i) === " " || text.charAt(i) === "\t"));
+tokens.push(cur_word);
+cur_word = "";
+}
+else if (i < text.length)
+{
+cur_word += ch;
+i++;
+}
+}
+if (cur_word.length)
+tokens.push(cur_word);
+return tokens;
 };
-this.socket = socket;
+pluginProto.WordWrap = function (text, ctx, width)
+{
+if (!text || !text.length)
+return [];
+if (width <= 2.0)
+return [];
+return this.WordWrapByWord(text, ctx, width);
+};
+pluginProto.WordWrapByWord = function (text, ctx, width)
+{
+var words = this.TokeniseWords(text);
+var lines = [];
+var cur_line = "";
+var prev_line;
+var line_width;
+var i;
+for (i = 0; i < words.length; i++)
+{
+if (words[i] === "\n")
+{
+var line = {};
+line.text = cur_line;
+line.width = ctx.measureText(cur_line).width;
+lines.push(line);
+cur_line = "";
+continue;
+}
+prev_line = cur_line;
+cur_line += words[i];
+line_width = ctx.measureText(cur_line).width;
+if (line_width >= width)
+{
+var line = {};
+line.text = prev_line;
+line.width = ctx.measureText(prev_line).width;
+lines.push(line);
+cur_line = words[i];
+}
+}
+if (cur_line.length)
+{
+var line = {};
+line.text = cur_line;
+line.width = ctx.measureText(cur_line).width;
+lines.push(line);
+}
+return lines;
 };
 pluginProto.cnds = {};
 var cnds = pluginProto.cnds;
-cnds["OnConnect"] = function()
+cnds.CompareText = function(text_to_compare, case_sensitive)
 {
-return true;
-};
-cnds["OnDisconnect"] = function()
-{
-return true;
-};
-cnds["OnError"] = function()
-{
-return true;
-};
-cnds["OnData"] = function()
-{
-return true;
+if (case_sensitive)
+return this.text == text_to_compare;
+else
+return this.text.toLowerCase() == text_to_compare.toLowerCase();
 };
 pluginProto.acts = {};
 var acts = pluginProto.acts;
-acts["Connect"] = function(host,port)
+acts.SetText = function(param)
 {
-host = host.toString();
-port = port.toString();
-this.connect(host,port);
+var text_to_set = param.toString();
+if (this.text !== text_to_set)
+{
+this.text = text_to_set;
+this.text_changed = true;
+this.runtime.redraw = true;
+}
 };
-acts["Send"] = function(data)
+acts.AppendText = function(param)
 {
-data = data.toString();
-this.send(data);
-};
-acts["Disconnect"] = function()
+var text_to_append = param.toString();
+if (text_to_append)	// not empty
 {
-this.disconnect();
+this.text += text_to_append;
+this.text_changed = true;
+this.runtime.redraw = true;
+}
 };
 pluginProto.exps = {};
 var exps = pluginProto.exps;
-exps["LastData"] = function(result)
+exps.Text = function(ret)
 {
-var dataStack = this.dataStack;
-var dataLength = dataStack.length;
-var data = "";
-if(dataLength > 0)
-data = dataStack.splice(0,1)[0].toString();
-result.set_string(data);
-};
-exps["LastPort"] = function(result)
-{
-result.set_string(this.lastPort);
-};
-exps["LastAddress"] = function(result)
-{
-result.set_string(this.lastAddress);
+ret.set_string(this.text);
 };
 }());
 cr.getProjectModel = function() { return [
@@ -4429,17 +4428,17 @@ null,
 null,
 [
 [
-cr.plugins_.Socket,
+cr.plugins_.Text,
+false,
+true,
+true,
 true,
 false,
-false,
-false,
-false,
-false,
-false
+true,
+true
 ]
 ,	[
-cr.plugins_.Browser,
+cr.plugins_.Function,
 true,
 false,
 false,
@@ -4452,7 +4451,7 @@ false
 [
 [
 "t0",
-cr.plugins_.Socket,
+cr.plugins_.Function,
 null,
 null,
 [
@@ -4460,7 +4459,7 @@ null,
 ]
 ,	[
 "t1",
-cr.plugins_.Browser,
+cr.plugins_.Text,
 null,
 null,
 [
@@ -4486,6 +4485,21 @@ false,
 1,
 false,
 [
+[
+[15, 18, 0, 544, 30, 0, 0, 1, 0, 0],
+1,
+[
+],
+[
+],
+[
+"Every 3 seconds a function is called which sets the layer's opacity randomly.",
+0,
+"12pt Arial",
+"rgb(0,0,0)",
+0
+]
+]
 ]
 ]
 ],
@@ -4503,96 +4517,113 @@ null,
 [
 [
 -1,
-cr.system_object.prototype.cnds.OnLayoutStart,
+cr.system_object.prototype.cnds.Every,
 null,
-true,
+false,
 false,
 false,
 false
+,[
+[
+0,
+[
+0,
+3
+]
+]
+]
 ]
 ],
 [
 [
 0,
-cr.plugins_.Socket.prototype.acts.Connect,
+cr.plugins_.Function.prototype.acts.AddParameter,
 null
 ,[
 [
-1,
+7,
+[
+19,
+cr.system_object.prototype.exps.random
+,[
+[
+0,
+0
+]
+,[
+0,
+100
+]
+]
+]
+]
+]
+]
+,			[
+0,
+cr.plugins_.Function.prototype.acts.CallFunction,
+null
+,[
+[
+7,
 [
 2,
-"echo.websocket.org"
+"Hello world"
+]
+]
+]
+]
+]
+]
+,		[
+0,
+null,
+[
+[
+0,
+cr.plugins_.Function.prototype.cnds.OnFunction,
+null,
+true,
+false,
+false,
+false
+,[
+[
+7,
+[
+2,
+"Hello world"
+]
+]
+]
+]
+],
+[
+[
+-1,
+cr.system_object.prototype.acts.SetLayerOpacity,
+null
+,[
+[
+5,
+[
+0,
+0
 ]
 ]
 ,				[
 0,
 [
-0,
-80
-]
-]
-]
-]
-]
-]
-,		[
-0,
-null,
-[
-[
-0,
-cr.plugins_.Socket.prototype.cnds.OnConnect,
-null,
-true,
-false,
-false,
-false
-]
-],
-[
-[
-0,
-cr.plugins_.Socket.prototype.acts.Send,
-null
-,[
-[
-7,
-[
-2,
-"Echo test"
-]
-]
-]
-]
-]
-]
-,		[
-0,
-null,
-[
-[
-0,
-cr.plugins_.Socket.prototype.cnds.OnData,
-null,
-true,
-false,
-false,
-false
-]
-],
-[
-[
-1,
-cr.plugins_.Browser.prototype.acts.Alert,
-null
-,[
-[
-7,
-[
 20,
 0,
-cr.plugins_.Socket.prototype.exps.LastData,
+cr.plugins_.Function.prototype.exps.GetParameter,
 null
+,[
+[
+0,
+0
+]
+]
 ]
 ]
 ]
@@ -4604,3 +4635,6 @@ null
 ],
 "media/"
 ];};
+
+window["cr"] = cr;
+window["cr"]["createRuntime"] = cr.createRuntime;

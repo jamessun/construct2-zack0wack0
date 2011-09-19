@@ -14,10 +14,16 @@ function GetPluginSettings()
 }
 
 AddAnyTypeParam("Function","Enter the name of the function.", "\"\"");
-AddCondition(0,cf_trigger,"On function","Function","On function \"{0}\"","Triggered when a specific function is called.","OnFunction");
+AddCondition(0,cf_trigger,"On function","Function","On function {0}","Triggered when a specific function is called.","OnFunction");
+
+AddNumberParam("Number","The index of the parameter to get.","0");
+AddExpression(0,ef_return_any,"Get parameter","Parameters","GetParameter","Get a parameter from the current parameter stack.");
+AddExpression(1,ef_return_number,"Get parameter count","Parameters","GetParameterCount","Get the number of parameters in the current parameter stack.");
 
 AddAnyTypeParam("Function","Enter the name of the function.", "\"\"");
-AddAction(0,0,"Call function","Function","Call function \"{0\"","Call a function.","CallFunction");
+AddAction(0,0,"Call function","Function","Call function {0}","Call a function.","CallFunction");
+AddAnyTypeParam("Value","Enter the value of the new parameter.", "\"\"");
+AddAction(1,0,"Add parameter","Parameters","Add parameter {0}","Add a parameter to the building paramater stack.","AddParameter");
 
 ACESDone();
 

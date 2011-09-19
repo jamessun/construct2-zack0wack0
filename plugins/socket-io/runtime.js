@@ -154,8 +154,8 @@ cr.plugins_.Socket = function(runtime)
 		this.lastPort = port;
 		
 		socket = new io.Socket(host,{port:port,transports:["websocket","flashsocket","xhr-multipart","xhr-polling","json-polling"]});;
-		var instance = this.inst;
-		var runtime = this.runtime;
+		var instance = this;
+		var runtime = instance.runtime;
 		socket.connect();
 		socket.on
 		(
