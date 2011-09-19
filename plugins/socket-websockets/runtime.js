@@ -5,14 +5,14 @@
 assert2(cr,"cr namespace not created");
 assert2(cr.plugins,"cr.plugins not created");
 
-cr.plugins.Socket = function(runtime)
+cr.plugins_.Socket = function(runtime)
 {
 	this.runtime = runtime;
 };
 
 (function ()
 {
-	var pluginProto = cr.plugins.Socket.prototype;
+	var pluginProto = cr.plugins_.Socket.prototype;
 
 	pluginProto.Type = function(plugin)
 	{
@@ -30,8 +30,8 @@ cr.plugins.Socket = function(runtime)
 		this.type = type;
 		this.runtime = type.runtime;
 		
-		if(typeof(WebSocket) == "undefined")
-			return alert("Your browser doesn't support WebSocket. You can't run this game, sorry.");
+		if(typeof(WebSocket) == "undefined" && typeof(MozWebSocket) == "undefined")
+			return alert("Your browser doesn't support WebSockets. You can't run this game, sorry.");
 		
 		this.dataStack = [];
 		this.lastAddress = "";
@@ -59,7 +59,7 @@ cr.plugins.Socket = function(runtime)
 	};
 	instanceProto.connect = function(host,port)
 	{
-		if(typeof(WebSocket) == "undefined")
+		if(typeof(WebSocket) == "undefined" && typeof(MozWebSocket) == "undefined")
 			return;
 		
 		var socket = this.socket;
@@ -69,43 +69,32 @@ cr.plugins.Socket = function(runtime)
 		
 		this.lastAddress = host;
 		this.lastPort = port;
+		var uri = "ws://" + host + ":" + port;
 		
-		socket = new WebSocket("ws://" + host + ":" + port);
+		if(MozWebSocket)
+			socket = new MozWebSocket(uri);
+		else
+			socket = new WebSocket(uri);
+		
 		var instance = this;
 		var runtime = this.runtime;
-		socket.addEventListener
-		(
-			"message",
-			function(event)
-			{
-				instance.dataStack.push(event.data);
-				runtime.trigger("OnData",instance);
-			}
+		socket.onmessage = function(event)
+		{
+			instance.dataStack.push(event.data);
+			runtime.trigger("OnData",instance);
 		);
-		socket.addEventListener
-		(
-			"error",
-			function(event)
-			{
-				runtime.trigger("OnError",instance);
-			}
-		);
-		socket.addEventListener
-		(
-			"open",
-			function(event)
-			{
-				runtime.trigger("OnConnect",instance);
-			}
-		);
-		socket.addEventListener
-		(
-			"close",
-			function(event)
-			{
-				runtime.trigger("OnDisconnect",instance);
-			}
-		);
+		socket.onerror = function(event)
+		{
+			runtime.trigger("OnError",instance);
+		};
+		socket.onopen = function(event)
+		{
+			runtime.trigger("OnConnect",instance);
+		};
+		socket.onclose = function(event)
+		{
+			runtime.trigger("OnDisconnect",instance);
+		};
 		
 		this.socket = socket;
 	};

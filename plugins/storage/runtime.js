@@ -4,14 +4,14 @@
 assert2(cr,"cr namespace not created");
 assert2(cr.plugins,"cr.plugins not created");
 
-cr.plugins.Storage = function(runtime)
+cr.plugins_.Storage = function(runtime)
 {
 	this.runtime = runtime;
 };
 
 (function()
 {
-	var pluginProto = cr.plugins.Storage.prototype;
+	var pluginProto = cr.plugins_.Storage.prototype;
 
 	pluginProto.Type = function(plugin)
 	{

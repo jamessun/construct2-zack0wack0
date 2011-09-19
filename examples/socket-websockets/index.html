@@ -1,0 +1,61 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=IE8" />
+	<title>New project</title>
+	<!-- Note: running this exported project from disk may not work exactly like preview, since browsers block some features on the file:// protocol.  Once you've uploaded it to a server, it should work OK. -->
+	
+    <!-- This outlines the canvas with a black border. -->
+	<style type="text/css">
+		canvas { border: 1px solid black; }
+	</style>
+
+</head> 
+ 
+<body> 
+	<div style="text-align: center;">
+
+        <!-- The canvas the project will render to.  If you change its ID, don't forget to change the
+        ID the runtime looks for in the jQuery ready event (above). -->
+		<canvas id="c2canvas" width="640" height="480" oncontextmenu="return false;">
+            <!-- This text is displayed if the visitor's browser does not support HTML5.
+            You can change it, but it is a good idea to link to a description of a browser
+            and provide some links to download some popular HTML5-compatible browsers. -->
+			Your browser does not appear to support HTML5.  Try upgrading your browser to the latest version.  <a href="http://www.whatbrowser.org">What is a browser?</a>
+			<br/><br/><a href="http://www.microsoft.com/windows/internet-explorer/default.aspx">Microsoft Internet Explorer</a><br/>
+			<a href="http://www.mozilla.com/firefox/">Mozilla Firefox</a><br/>
+			<a href="http://www.google.com/chrome/">Google Chrome</a><br/>
+			<a href="http://www.apple.com/safari/download/">Apple Safari</a><br/>
+			<a href="http://www.google.com/chromeframe">Google Chrome Frame for Internet Explorer</a><br/>
+		</canvas>
+
+        <br />
+		<!-- Link is optional of course but it'd be nice if you kept a link to help support Scirra! -->
+		<a href="http://www.scirra.com/" target="_blank" title="Make games with Construct 2" style="font-family:Arial">Made with Construct 2 &mdash; the HTML5 game creator</a><br/><br/>
+		
+		<!-- The text below is just for your information.  Feel free to remove this text before uploading (everything from <p... to </p> inclusive) -->
+        <p style="font-family:Arial; color:#888">View the source of this page for more information about using exported projects.<br/>You can also simply upload all the files in this directory to a server (or a public file host like DropBox), and run the game by visiting index.html.</p>
+	</div>
+	
+	<!-- Pages load faster with scripts at the bottom -->
+	
+	<!-- Construct 2 exported games require jQuery.  To save bandwidth, by default
+	this is set to grab it off the Google content delivery network (CDN). Fall back to local if not available. -->
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.3/jquery.min.js"></script>
+	<script>window.jQuery || document.write("<script src='jquery-1.6.3.min.js'>\x3C/script>")</script>
+
+    <!-- The runtime script.  You can rename it, but don't forget to rename the reference here as well.
+    This file will have been minified and obfuscated if you enabled "Minify script" during export. -->
+	<script src="c2runtime.js"></script>
+
+    <script>
+        // Start the Construct 2 project running on window load.
+        jQuery(document).ready(function ()
+        {
+            // Create new runtime using the c2canvas
+			cr.createRuntime("c2canvas");
+        });
+    </script>
+</body> 
+</html> 

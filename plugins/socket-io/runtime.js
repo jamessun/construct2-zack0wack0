@@ -94,14 +94,14 @@ WebSocket.__addTask=function(a){WebSocket.__flash?a():WebSocket.__tasks.push(a)}
 assert2(cr,"cr namespace not created");
 assert2(cr.plugins,"cr.plugins not created");
 
-cr.plugins.Socket = function(runtime)
+cr.plugins_.Socket = function(runtime)
 {
 	this.runtime = runtime;
 };
 
 (function ()
 {
-	var pluginProto = cr.plugins.Socket.prototype;
+	var pluginProto = cr.plugins_.Socket.prototype;
 
 	pluginProto.Type = function(plugin)
 	{
