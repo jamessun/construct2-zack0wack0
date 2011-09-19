@@ -154,7 +154,7 @@ cr.plugins_.Socket = function(runtime)
 		this.lastPort = port;
 		
 		socket = new io.Socket(host,{port:port,transports:["websocket","flashsocket","xhr-multipart","xhr-polling","json-polling"]});;
-		var instance = this;
+		var instance = this.inst;
 		var runtime = this.runtime;
 		socket.connect();
 		socket.on
@@ -163,7 +163,7 @@ cr.plugins_.Socket = function(runtime)
 			function(data)
 			{
 				instance.dataStack.push(data);
-				runtime.trigger("OnData",instance);
+				runtime.trigger(pluginProto.cnds.OnData,instance);
 			}
 		);
 		socket.on
@@ -171,7 +171,7 @@ cr.plugins_.Socket = function(runtime)
 			"connect_failed",
 			function(event)
 			{
-				runtime.trigger("OnError",instance);
+				runtime.trigger(pluginProto.cnds.OnError,instance);
 			}
 		);
 		socket.on
@@ -179,7 +179,7 @@ cr.plugins_.Socket = function(runtime)
 			"connect",
 			function(event)
 			{
-				runtime.trigger("OnConnect",instance);
+				runtime.trigger(pluginProto.cnds.OnConnect,instance);
 			}
 		);
 		socket.on
@@ -187,7 +187,7 @@ cr.plugins_.Socket = function(runtime)
 			"disconnect",
 			function()
 			{
-				runtime.trigger("OnDisconnect",instance);
+				runtime.trigger(pluginProto.cnds.OnDisconnect,instance);
 			}
 		);
 		

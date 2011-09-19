@@ -4312,8 +4312,8 @@ pluginProto.Instance = function(type)
 {
 this.type = type;
 this.runtime = type.runtime;
-if(typeof(WebSocket) == "undefined")
-return alert("Your browser doesn't support WebSocket. You can't run this game, sorry.");
+if(typeof(WebSocket) == "undefined" && typeof(MozWebSocket) == "undefined")
+return alert("Your browser doesn't support WebSockets. You can't run this game, sorry.");
 this.dataStack = [];
 this.lastAddress = "";
 this.lastPort = 80;
@@ -4336,49 +4336,37 @@ socket.close();
 };
 instanceProto.connect = function(host,port)
 {
-if(typeof(WebSocket) == "undefined")
+if(typeof(WebSocket) == "undefined" && typeof(MozWebSocket) == "undefined")
 return;
 var socket = this.socket;
 if(typeof(socket) != "undefined")
 socket.close();
 this.lastAddress = host;
 this.lastPort = port;
-socket = new WebSocket("ws://" + host + ":" + port);
-var instance = this;
+var uri = "ws://" + host + ":" + port;
+if(!!WebSocket)
+socket = new WebSocket(uri);
+else
+socket = new MozWebSocket(uri);
+var instance = this.inst;
 var runtime = this.runtime;
-socket.addEventListener
-(
-"message",
-function(event)
+socket.onmessage = function(event)
 {
 instance.dataStack.push(event.data);
-runtime.trigger("OnData",instance);
-}
-);
-socket.addEventListener
-(
-"error",
-function(event)
+runtime.trigger(pluginProto.cnds.OnData,instance);
+};
+socket.onerror = function(event)
 {
-runtime.trigger("OnError",instance);
-}
-);
-socket.addEventListener
-(
-"open",
-function(event)
+runtime.trigger(pluginProto.cnds.OnError,instance);
+};
+socket.onopen = function(event)
 {
-runtime.trigger("OnConnect",instance);
-}
-);
-socket.addEventListener
-(
-"close",
-function(event)
+runtime.trigger(pluginProto.cnds.OnConnect,instance);
+};
+socket.onclose = function(event)
 {
-runtime.trigger("OnDisconnect",instance);
-}
-);
+runtime.trigger(pluginProto.cnds.OnDisconnect,instance);
+};
 this.socket = socket;
 };
 pluginProto.cnds = {};

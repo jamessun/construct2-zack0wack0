@@ -71,29 +71,29 @@ cr.plugins_.Socket = function(runtime)
 		this.lastPort = port;
 		var uri = "ws://" + host + ":" + port;
 		
-		if(MozWebSocket)
-			socket = new MozWebSocket(uri);
-		else
+		if(!!WebSocket)
 			socket = new WebSocket(uri);
+		else
+			socket = new MozWebSocket(uri);
 		
-		var instance = this;
+		var instance = this.inst;
 		var runtime = this.runtime;
 		socket.onmessage = function(event)
 		{
 			instance.dataStack.push(event.data);
-			runtime.trigger("OnData",instance);
-		);
+			runtime.trigger(pluginProto.cnds.OnData,instance);
+		};
 		socket.onerror = function(event)
 		{
-			runtime.trigger("OnError",instance);
+			runtime.trigger(pluginProto.cnds.OnError,instance);
 		};
 		socket.onopen = function(event)
 		{
-			runtime.trigger("OnConnect",instance);
+			runtime.trigger(pluginProto.cnds.OnConnect,instance);
 		};
 		socket.onclose = function(event)
 		{
-			runtime.trigger("OnDisconnect",instance);
+			runtime.trigger(pluginProto.cnds.OnDisconnect,instance);
 		};
 		
 		this.socket = socket;
