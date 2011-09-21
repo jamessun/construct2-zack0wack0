@@ -2,7 +2,7 @@
 "use strict";
 
 assert2(cr,"cr namespace not created");
-assert2(cr.plugins_,"cr.plugins not created");
+assert2(cr.plugins,"cr.plugins not created");
 
 cr.plugins_.Storage = function(runtime)
 {

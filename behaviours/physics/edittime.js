@@ -12,7 +12,7 @@ function GetBehaviorSettings()
 };
 
 ACESDone();
-
+ 
 var property_list = [
 	new cr.Property(ept_float,"Density",1,"The density of the object."),
 	new cr.Property(ept_float,"Restitution",1,"The restitution of the object."),
